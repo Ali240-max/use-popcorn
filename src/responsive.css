@@ -1,0 +1,125 @@
+@media (max-width: 900px) {
+  .nav-bar {
+    /* Change grid to 2 rows. Top row has logo & results. Bottom row has search bar. */
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 1.6rem;
+    row-gap: 1.6rem;
+    height: auto; /* Allow height to adjust to content */
+    padding: 1.6rem 2.4rem;
+  }
+
+  .logo {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+  }
+
+  .num-results {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    justify-self: end;
+  }
+
+  .search {
+    grid-column: 1 / -1; /* Span full width */
+    grid-row: 2 / 3;
+    width: 100%;
+    justify-self: stretch; /* Ensure it stretches */
+  }
+
+  .main {
+    flex-direction: column; /* Stack the two boxes vertically */
+    height: auto; /* Remove fixed height to allow content to flow */
+  }
+
+  .box {
+    width: 100%; /* Make boxes take full width of the container */
+    max-width: none;
+  }
+
+  .details header {
+    gap: 1.6rem;
+  }
+
+  .details img {
+    width: 40%; /* Give image a bit more space */
+  }
+
+  .details-overview {
+    padding: 2rem;
+  }
+
+  .details section {
+    padding: 2.4rem;
+  }
+}
+
+/* For smaller mobile devices */
+@media (max-width: 600px) {
+  html {
+    font-size: 56.25%; /* 9px base font size for small screens (9/16 * 100) */
+  }
+
+  body {
+    padding: 1.2rem;
+  }
+
+  .nav-bar {
+    padding: 1.2rem 1.6rem;
+    row-gap: 1.2rem;
+  }
+
+  .logo h1 {
+    font-size: 2rem;
+  }
+
+  .logo span {
+    font-size: 2.8rem;
+  }
+
+  .num-results {
+    font-size: 1.4rem;
+  }
+
+  .main {
+    margin-top: 1.2rem;
+    gap: 1.2rem;
+  }
+
+  /* Stack movie details header vertically */
+  .details header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6rem;
+  }
+
+  .details img {
+    width: 50%; /* Image takes half the width of the container */
+    max-width: 18rem; /* But not more than 18rem */
+  }
+
+  .details-overview h2 {
+    font-size: 2rem;
+  }
+
+  .list li {
+    padding: 1.2rem 1.6rem;
+    column-gap: 1.6rem;
+  }
+
+  .list h3 {
+    font-size: 1.6rem;
+  }
+
+  .summary div {
+    /* Keep items in a row and allow them to wrap */
+    flex-wrap: wrap;
+    /* Reduce the gap for smaller screens */
+    gap: 1.2rem 1.6rem;
+  }
+
+  .box.box--closed {
+    height: 4.2rem; /* Give it a small, fixed height */
+    overflow: hidden; /* Ensure no content peeks out */
+  }
+}
