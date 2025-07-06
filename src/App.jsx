@@ -16,6 +16,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null);
   const { movies, isLoading, error } = useMovies(query);
   const [watched, setWatched] = useLocalStorageState([], "watched");
+  const [rewatch, setRewatch] = useState(false);
 
   function handleDetailsOpen(id) {
     setSelectedId((selectedId) => (selectedId === id ? null : id));
@@ -27,8 +28,11 @@ export default function App() {
 
   function handleAddWatched(movie) {
     setWatched((watched) => [...watched, movie]);
+  }
 
-    // localStorage.setItem("watched", JSON.stringify([...watched, movie]));
+  function handleRewatch(watchedMovies) {
+    setWatched(watchedMovies);
+    setRewatch((r) => !r);
   }
 
   function handleDeleteWatched(id) {
@@ -60,6 +64,7 @@ export default function App() {
               handleDetailsClose={handleDetailsClose}
               onAddWatched={handleAddWatched}
               watched={watched}
+              setRewatch={setRewatch}
             />
           ) : (
             <>
@@ -67,10 +72,19 @@ export default function App() {
               <WatchedMovieList
                 watched={watched}
                 onDeleteWatched={handleDeleteWatched}
+                onDetailsOpen={handleDetailsOpen}
               />
             </>
           )}
         </Box>
+        {rewatch && (
+          <ModalWindow
+            onClose={setRewatch}
+            watched={watched}
+            onRewatch={handleRewatch}
+            selectedId={selectedId}
+          />
+        )}
       </Main>
     </>
   );
@@ -178,9 +192,13 @@ function Box({ children }) {
 // }
 
 function Sumarry({ watched }) {
-  const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
-  const avgUserRating = average(watched.map((movie) => movie.userRating));
-  const avgRuntime = average(watched.map((movie) => movie.runtime));
+  const avgImdbRating = average(
+    watched.map((movie) => movie.imdbRating)
+  ).toFixed(2);
+  const avgUserRating = average(
+    watched.map((movie) => movie.userRating)
+  ).toFixed(2);
+  const avgRuntime = average(watched.map((movie) => movie.runtime)).toFixed(0);
   return (
     <div className="summary">
       <h2>Movies you watched</h2>
@@ -211,6 +229,7 @@ function MovieDetails({
   handleDetailsClose,
   onAddWatched,
   watched,
+  setRewatch,
 }) {
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -244,6 +263,8 @@ function MovieDetails({
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      rewatchCount: 0,
+      rewatchComment: [],
     };
 
     onAddWatched(newWatchedMovie);
@@ -326,9 +347,33 @@ function MovieDetails({
                   )}
                 </>
               ) : (
-                <p>You rated this movie with {userWatchedRating} ⭐</p>
+                <>
+                  <p>You rated this movie with {userWatchedRating} ⭐</p>
+                  <p>
+                    Rewatch Status:{" "}
+                    {watched.find((mov) => mov.imdbID === selectedId)
+                      .rewatchCount + " "}
+                    time
+                  </p>
+                  <button
+                    className="btn-add"
+                    onClick={() => setRewatch((r) => !r)}
+                  >
+                    Rewatch
+                  </button>
+                </>
               )}
             </div>
+
+            {watched.find((mov) => mov.imdbID === selectedId)?.rewatchComment
+              .length > 0 && <h3>Comments</h3>}
+
+            {watched
+              .find((mov) => mov.imdbID === selectedId)
+              ?.rewatchComment.map((mov, i) => (
+                <Comment number={i} comment={mov} />
+              ))}
+
             <p>
               <em>{plot}</em>
             </p>
@@ -356,25 +401,32 @@ function MoviesList({ movies, onDetailsOpen, onDetailsClose }) {
   );
 }
 
-function WatchedMovieList({ watched, onDeleteWatched }) {
+function WatchedMovieList({ watched, onDeleteWatched, onDetailsOpen }) {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {watched.map((movie) => (
         <WatchedMovie
           movie={movie}
           key={movie.imdbID}
           onDeleteWatched={onDeleteWatched}
+          onDetailsOpen={onDetailsOpen}
         />
       ))}
     </ul>
   );
 }
 
-function WatchedMovie({ movie, onDeleteWatched }) {
+function WatchedMovie({ movie, onDeleteWatched, onDetailsOpen }) {
   return (
-    <li>
+    <li onClick={() => onDetailsOpen(movie.imdbID)}>
       <img src={movie.poster} alt={`${movie.title} poster`} />
       <h3>{movie.title}</h3>
+      <button
+        className="btn-delete"
+        onClick={() => onDeleteWatched(movie.imdbID)}
+      >
+        X
+      </button>
       <div>
         <p>
           <span>⭐️</span>
@@ -388,18 +440,16 @@ function WatchedMovie({ movie, onDeleteWatched }) {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
-        <button
-          className="btn-delete"
-          onClick={() => onDeleteWatched(movie.imdbID)}
-        >
-          X
-        </button>
+        <p>
+          <span>🔂</span>
+          <span>{movie.rewatchCount} time</span>
+        </p>
       </div>
     </li>
   );
 }
 
-function Movie({ movie, onDetailsClose, onDetailsOpen }) {
+function Movie({ movie, onDetailsOpen }) {
   return (
     <li onClick={() => onDetailsOpen(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
@@ -411,5 +461,64 @@ function Movie({ movie, onDetailsClose, onDetailsOpen }) {
         </p>
       </div>
     </li>
+  );
+}
+
+function ModalWindow({ onClose, watched, onRewatch, selectedId }) {
+  const [comment, setComment] = useState("");
+  function handleClose() {
+    onClose((r) => !r);
+  }
+
+  function handleRewatch() {
+    const newWatched = watched.map((mov) =>
+      mov.imdbID === selectedId
+        ? {
+            ...mov,
+            rewatchCount: mov.rewatchCount + 1,
+            rewatchComment: [...mov.rewatchComment, comment],
+          }
+        : mov
+    );
+
+    // console.log(comment);
+    onRewatch(newWatched);
+    // console.log(newWatched);
+  }
+
+  return (
+    <div className="overlay">
+      <div className="modal ">
+        <button className="close-modal" onClick={handleClose}>
+          &times;
+        </button>
+        <h1>What are your thoughts about the movie on this rewatch?</h1>
+        {/* <input
+        type="text"
+        className="model-input"
+        placeholder="Your thoughts..."
+      /> */}
+        <textarea
+          name=""
+          id=""
+          cols="30"
+          rows="10"
+          className="model-input"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+        ></textarea>
+        <button className="btn-add" onClick={handleRewatch}>
+          Submit
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Comment({ number, comment }) {
+  return (
+    <p>
+      Rewatch {number + 1}: {comment}
+    </p>
   );
 }
